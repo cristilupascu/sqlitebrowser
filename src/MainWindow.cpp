@@ -971,7 +971,8 @@ void MainWindow::addRecord()
 {
     int row = m_browseTableModel->rowCount();
 
-    if(m_browseTableModel->insertRow(row))
+    // If table has pseudo_pk, then it must be an editable view. Jump straight to inserting by pop-up dialog.
+    if(!m_browseTableModel->hasPseudoPk() && m_browseTableModel->insertRow(row))
     {
         selectTableLine(row);
     } else {
@@ -983,7 +984,8 @@ void MainWindow::addRecord()
 
 void MainWindow::insertValues()
 {
-    AddRecordDialog dialog(db, currentlyBrowsedTableName(), this);
+    QString pseudo_pk = m_browseTableModel->hasPseudoPk() ? m_browseTableModel->pseudoPk() : QString();
+    AddRecordDialog dialog(db, currentlyBrowsedTableName(), this, pseudo_pk);
     if (dialog.exec())
         populateTable();
 }
@@ -3723,7 +3725,7 @@ void MainWindow::updateInsertDeleteRecordButton()
     // at least one row to be selected. For the insert button there is an extra rule to disable it when we are browsing a view because inserting
     // into a view isn't supported yet.
     bool isEditable = m_browseTableModel->isEditable() && !db.readOnly();
-    ui->actionNewRecord->setEnabled(isEditable && !m_browseTableModel->hasPseudoPk());
+    ui->actionNewRecord->setEnabled(isEditable);
     ui->actionDeleteRecord->setEnabled(isEditable && rows != 0);
 
     if(rows > 1)
